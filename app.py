@@ -388,6 +388,9 @@ with left:
     )
 
     fig_top = apply_chart_style(fig_top, 315)
+    st.plotly_chart(fig_top, use_container_width=True, config={"displayModeBar": False})
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     top5_share = top_items_df.head(5).copy()
     total_top5 = top5_share["Jumlah Pembelian"].sum()
     top5_share["Persentase"] = top5_share["Jumlah Pembelian"] / total_top5 * 100
