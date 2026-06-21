@@ -289,7 +289,7 @@ basket_sets = pd.DataFrame(te_array, columns=te.columns_)
 
 frequent_itemsets = apriori(
     basket_sets,
-    min_support=0.03,
+    min_support=0.02,
     use_colnames=True
 )
 
