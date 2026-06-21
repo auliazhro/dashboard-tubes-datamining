@@ -228,45 +228,46 @@ def apply_chart_style(fig, height):
     return fig
 
 # ==========================================================
-# LOAD DATA & DATA CLEANING
+# LOAD DATA & DATA CLEANING (PERBAIKAN PEMBACAAN CSV MULTI-KOLOM)
 # ==========================================================
 
 @st.cache_data
 def load_and_clean_data():
-    # MEMPERBAIKI PEMBACAAN FILE MENJADI READ_CSV KARENA ASLINYA ADALAH CSV
+    # Menghubungkan langsung dengan nama berkas CSV di repository kamu
+    filename = "bread_basket_per_transaksi.xlsx - Sheet1.csv"
+    
+    # Membaca data dengan pembatasan ketat agar koma di dalam teks item tidak merusak baris
     try:
-        data = pd.read_csv("bread_basket_per_transaksi.xlsx - Sheet1.csv")
+        data = pd.read_csv(filename, on_bad_lines='skip')
     except FileNotFoundError:
-        data = pd.read_csv("bread_basket_per_transaksi.csv")
+        data = pd.read_csv("bread_basket_per_transaksi.csv", on_bad_lines='skip')
         
+    # Standardisasi nama kolom menjadi huruf kecil
     data.columns = [str(col).strip().lower() for col in data.columns]
     
-    df_clean = data.copy().drop_duplicates()
+    # Jika data terlanjur melebar ke samping, kita ambil 2 kolom utama secara paksa
+    col_transaction = [c for c in data.columns if "transaction" in c or "id" in c][0]
+    col_item = [c for c in data.columns if "item" in c or "items" in c or "produk" in c][0]
     
-    # Deteksi nama kolom id transaksi dan kolom item produk
-    col_transaction = [c for c in df_clean.columns if "transaction" in c][0]
-    col_item = [c for c in df_clean.columns if "item" in c][0]
+    df_clean = data[[col_transaction, col_item]].copy()
+    df_clean = df_clean.drop_duplicates()
+    df_clean = df_clean.dropna()
     
-    df_clean = df_clean.dropna(subset=[col_transaction, col_item])
     df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
     
-    # Standardisasi rujukan nama variabel
+    # Kembalikan rujukan nama variabel standar
     df_clean["Transaction"] = df_clean[col_transaction] 
     df_clean["Items"] = df_clean[col_item]
     
-    if "period_day" in df_clean.columns:
-        df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
-    if "weekday_weekend" in df_clean.columns:
-        df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
+    # Deteksi opsional untuk kolom periode waktu (jika ada di file csv asli)
+    for ext_col in ["period_day", "weekday_weekend"]:
+        if ext_col in data.columns:
+            df_clean[ext_col] = data[ext_col].astype(str).str.strip().str.lower()
+        else:
+            # Skenario pengaman jika kolom waktu hilang akibat pergeseran CSV
+            df_clean[ext_col] = "not specified"
         
     return df_clean
-
-df_clean = load_and_clean_data()
-
-# Membuat list transaksi belanja untuk pemodelan
-transactions = df_clean["Items"].apply(
-    lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
-).tolist()
 
 # ==========================================================
 # ONE-HOT ENCODING
