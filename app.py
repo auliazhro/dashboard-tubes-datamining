@@ -268,24 +268,51 @@ df = load_data()
 #         st.info("Silakan unggah file Excel 'bread_basket_per_transaksi.xlsx' pada bilah samping (sidebar) untuk memuat dashboard.")
 #         st.stop()
 
+# # ==========================================================
+# # DATA CLEANING WITH FLEXIBLE COLUMNS
+# # ==========================================================
+
+# df_clean = df.copy()
+# df_clean = df_clean.drop_duplicates()
+
+# # Deteksi otomatis kolom transaksi dan item (mengatasi variasi nama Transaction/Item/Items)
+# col_transaction = [c for c in df_clean.columns if "transaction" in c][0]
+# col_item = [c for c in df_clean.columns if "item" in c][0]
+
+# # Membersihkan baris yang kosong pada kolom utama
+# df_clean = df_clean.dropna(subset=[col_transaction, col_item])
+# df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
+
+# # Mengganti rujukan statis "Transaction" menggunakan variabel dinamis
+# df_clean["Transaction"] = df_clean[col_transaction] 
+# df_clean["Items"] = df_clean[col_item]
+
+# if "period_day" in df_clean.columns:
+#     df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
+
+# if "weekday_weekend" in df_clean.columns:
+#     df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
+
+# df_clean["Jumlah_Item"] = df_clean["Items"].apply(
+#     lambda x: len([item.strip() for item in str(x).split(",") if item.strip() != ""])
+# )
+
+# transactions = df_clean["Items"].apply(
+#     lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
+# ).tolist()
+
 # ==========================================================
-# DATA CLEANING WITH FLEXIBLE COLUMNS
+# DATA CLEANING (DEFINITIF & TETAP)
 # ==========================================================
 
 df_clean = df.copy()
 df_clean = df_clean.drop_duplicates()
 
-# Deteksi otomatis kolom transaksi dan item (mengatasi variasi nama Transaction/Item/Items)
-col_transaction = [c for c in df_clean.columns if "transaction" in c][0]
-col_item = [c for c in df_clean.columns if "item" in c][0]
+# Kembalikan ke nama kolom asli bawaan Excel kamu (Gaya Google Colab)
+# Pastikan huruf besar 'T' pada Transaction dan 'I' pada Items sesuai dengan berkas asli
+df_clean = df_clean.dropna(subset=["Transaction", "Items"])
 
-# Membersihkan baris yang kosong pada kolom utama
-df_clean = df_clean.dropna(subset=[col_transaction, col_item])
-df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
-
-# Mengganti rujukan statis "Transaction" menggunakan variabel dinamis
-df_clean["Transaction"] = df_clean[col_transaction] 
-df_clean["Items"] = df_clean[col_item]
+df_clean["Items"] = df_clean["Items"].astype(str).str.strip()
 
 if "period_day" in df_clean.columns:
     df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
