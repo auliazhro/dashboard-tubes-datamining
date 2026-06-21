@@ -23,7 +23,8 @@ st.markdown("""
 }
 
 .block-container {
-    padding-top: 1rem;
+    padding-top: 4.8rem !important;
+    padding-bottom: 0.2rem !important;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
     max-width: 1250px;
@@ -134,10 +135,18 @@ h2, h3 {
     background: rgba(15, 23, 42, 0.88);
     border: 1px solid rgba(148, 163, 184, 0.25);
     color: #F8FAFC;
-    padding: 16px;
+    padding: 12px 16px;
     border-radius: 10px;
-    margin-top: 12px;
-    margin-bottom: 20px;
+    margin-top: 8px;
+    margin-bottom: 0px;
+}
+
+footer {
+    visibility: hidden;
+}
+
+section.main > div {
+    padding-bottom: 0rem !important;
 }
 
 [data-testid="stDataFrame"] {
@@ -186,9 +195,7 @@ def apply_chart_style(fig, height):
 @st.cache_data
 def load_data():
     files = [
-        "bread_basket_per_transaksi.xlsx",
-        "bread_basket_per_transaksi.csv",
-        "bread_basket_per_transaksi.xlsx - Sheet1.csv"
+        "bread_basket_per_transaksi.xlsx"
     ]
 
     selected = None
@@ -380,7 +387,7 @@ with left:
         yaxis_title="",
     )
 
-    fig_top = apply_chart_style(fig_top, 360)
+    fig_top = apply_chart_style(fig_top, 315)
     st.plotly_chart(fig_top, use_container_width=True, config={"displayModeBar": False})
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -472,7 +479,7 @@ fig_pair.update_layout(
     yaxis_title=""
 )
 
-fig_pair = apply_chart_style(fig_pair, 330)
+fig_pair = apply_chart_style(fig_pair, 285)
 st.plotly_chart(fig_pair, use_container_width=True, config={"displayModeBar": False})
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -505,7 +512,7 @@ with t1:
 
         fig_period.update_traces(textposition="outside", textfont_color="#F8FAFC")
         fig_period.update_layout(xaxis_title="Periode Hari", yaxis_title="Jumlah Transaksi")
-        fig_period = apply_chart_style(fig_period, 285)
+        fig_period = apply_chart_style(fig_period, 240)
 
         st.plotly_chart(fig_period, use_container_width=True, config={"displayModeBar": False})
 
@@ -529,7 +536,7 @@ with t2:
 
         fig_weekday.update_traces(textposition="outside", textfont_color="#F8FAFC")
         fig_weekday.update_layout(xaxis_title="Kategori Hari", yaxis_title="Jumlah Transaksi")
-        fig_weekday = apply_chart_style(fig_weekday, 285)
+        fig_weekday = apply_chart_style(fig_weekday, 240)
 
         st.plotly_chart(fig_weekday, use_container_width=True, config={"displayModeBar": False})
 
@@ -542,7 +549,7 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown(
     """
     <div class="footer-card">
-    <b>⭐ Kesimpulan:</b><br>
+    <b>⭐ Kesimpulan:</b>
     Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
     Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
     </div>
