@@ -595,7 +595,7 @@ st.markdown(
         Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
         <br><br>
         <div style="
-            text-align:right;
+            text-align:left;
             font-size:13px;
             color:#94A3B8;
             font-style:italic;
