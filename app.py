@@ -197,7 +197,7 @@ Original file is located at
 # # Background grafik mengikuti tema Streamlit
 # # ==========================================================
 # 
-# base_theme = st.get_option("theme.base") or "dark"
+# base_theme = st.get_option("theme.base")
 # 
 # if base_theme == "dark":
 #     CHART_TEMPLATE = "plotly_dark"
