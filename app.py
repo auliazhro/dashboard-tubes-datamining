@@ -70,45 +70,42 @@ def apply_chart_style(fig, height):
 # ==========================================================
 # LOAD DATA & DATA CLEANING
 # ==========================================================
+
 @st.cache_data
 def load_and_clean_data():
+    # Mengunci nama berkas agar membaca tepat pada file yang ada di repository GitHub-mu
     filename = "bread_basket_per_transaksi.xlsx - Sheet1.csv"
     
-    # Membaca data dengan mengabaikan baris buruk akibat pembacaan koma dalam kolom
-    try:
-        data = pd.read_csv(filename, on_bad_lines='skip')
-    except FileNotFoundError:
-        data = pd.read_csv("bread_basket.csv", on_bad_lines='skip')
+    # Membaca data CSV menggunakan delimiter koma standar
+    data = pd.read_csv(filename, sep=',')
         
     data.columns = [str(col).strip().lower() for col in data.columns]
     
-    # Mengambil nama kolom yang sesuai secara dinamis
-    col_transaction = [c for c in data.columns if "transaction" in c or "id" in c][0]
-    col_item = [c for c in data.columns if "item" in c or "produk" in c][0]
+    # Membuang baris yang duplikat sejak awal data mentah
+    df_clean = data.copy().drop_duplicates()
     
-    df_clean = data[[col_transaction, col_item]].dropna().copy()
+    # Menemukan nama kolom transaksi dan item produk secara fleksibel
+    col_transaction = [c for c in df_clean.columns if "transaction" in c or "id" in c][0]
+    col_item = [c for c in df_clean.columns if "item" in c or "produk" in c or "items" in c][0]
+    
+    # Hapus data kosong (NaN) khusus pada kolom utama agar tidak merusak encoding mlxtend
+    df_clean = df_clean.dropna(subset=[col_transaction, col_item])
+    
+    # Memastikan tipe data berupa string tulen dan membersihkan spasi tak terlihat
+    df_clean[col_transaction] = df_clean[col_transaction].astype(str).str.strip()
     df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
     
-    # Standarisasi untuk rujukan kode berikutnya
-    df_clean["Transaction"] = df_clean[col_transaction]
+    # Standarisasi penamaan variabel global untuk kebutuhan visualisasi di bawah
+    df_clean["Transaction"] = df_clean[col_transaction] 
     df_clean["Items"] = df_clean[col_item]
     
-    # Mempertahankan kolom demografi waktu jika ada
-    for col_time in ["period_day", "weekday_weekend"]:
-        if col_time in data.columns:
-            df_clean[col_time] = data[col_time].astype(str).str.strip().str.lower()
-            
+    # Mempertahankan ekstraksi fitur waktu transaksional jika kolomnya tersedia
+    if "period_day" in df_clean.columns:
+        df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
+    if "weekday_weekend" in df_clean.columns:
+        df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
+        
     return df_clean
-
-df_clean = load_and_clean_data()
-
-# Pembuatan list transaksi murni (mengatasi koma parsial di dalam baris)
-transactions = []
-for item_row in df_clean["Items"]:
-    if pd.notna(item_row) and str(item_row).strip() != "":
-        produk_split = [p.strip() for p in str(item_row).split(",") if p.strip() != ""]
-        if len(produk_split) > 0:
-            transactions.append(produk_split)
 
 # ==========================================================
 # MODELING ONE-HOT ENCODING & APRIORI
