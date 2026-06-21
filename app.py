@@ -57,7 +57,7 @@ st.markdown(
     }
 
     .caption-box {
-        padding: 9px 12px;
+        padding: 10px 12px;
         border-radius: 8px;
         border-left: 4px solid #3B82F6;
         margin-bottom: 10px;
@@ -65,28 +65,22 @@ st.markdown(
         box-shadow: 0px 1px 5px rgba(0,0,0,0.08);
     }
 
-    .finding-card {
-        padding: 15px 16px;
-        border-radius: 12px;
-        border-left: 6px solid #3B82F6;
-        margin-bottom: 10px;
-        box-shadow: 0px 1px 6px rgba(0,0,0,0.10);
-    }
-
-    .finding-title {
-        color: #3B82F6;
-        font-size: 20px;
-        font-weight: 800;
-        margin-bottom: 6px;
-    }
-
     .recommend-card {
-        padding: 12px 14px;
+        padding: 14px 16px;
         border-radius: 10px;
         border-left: 5px solid #10B981;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 14px;
         box-shadow: 0px 1px 5px rgba(0,0,0,0.08);
+    }
+
+    .footer-card {
+        background-color: #1E3A8A;
+        color: white;
+        padding: 16px 18px;
+        border-radius: 12px;
+        margin-top: 12px;
+        font-size: 14px;
     }
 
     div[data-testid="stMetric"] {
@@ -102,35 +96,10 @@ st.markdown(
         font-weight: 800;
     }
 
-    [data-testid="stMetricLabel"] {
-        font-weight: 700;
-    }
-
-    .footer-card {
-        background-color: #1E3A8A;
-        color: white;
-        padding: 16px 18px;
-        border-radius: 12px;
-        margin-top: 12px;
-        font-size: 14px;
-    }
-
     @media (prefers-color-scheme: light) {
-        .caption-box {
+        .caption-box, .recommend-card {
             background-color: #F8FAFC;
             color: #1F2937;
-        }
-
-        .finding-card {
-            background-color: #F8FAFC;
-            color: #111827;
-            border: 1px solid #E5E7EB;
-            border-left: 6px solid #3B82F6;
-        }
-
-        .recommend-card {
-            background-color: #F8FAFC;
-            color: #111827;
         }
 
         div[data-testid="stMetric"] {
@@ -139,33 +108,13 @@ st.markdown(
     }
 
     @media (prefers-color-scheme: dark) {
-        .caption-box {
-            background-color: #111827;
-            color: #F9FAFB;
-        }
-
-        .finding-card {
-            background-color: #111827;
-            color: #F9FAFB;
-            border: 1px solid #374151;
-            border-left: 6px solid #60A5FA;
-        }
-
-        .finding-title {
-            color: #60A5FA;
-        }
-
-        .recommend-card {
+        .caption-box, .recommend-card {
             background-color: #111827;
             color: #F9FAFB;
         }
 
         div[data-testid="stMetric"] {
             background-color: #111827;
-        }
-
-        [data-testid="stMetricValue"] {
-            color: #60A5FA;
         }
     }
     </style>
@@ -177,7 +126,7 @@ st.markdown(
 # CHART STYLE
 # ==========================================================
 
-base_theme = st.get_option("theme.base")
+base_theme = st.get_option("theme.base") or "light"
 
 if base_theme == "dark":
     CHART_TEMPLATE = "plotly_dark"
@@ -201,20 +150,8 @@ def apply_chart_style(fig, height):
         title_font=dict(size=17, color=CHART_TEXT),
         margin=dict(l=5, r=20, t=45, b=5)
     )
-
-    fig.update_xaxes(
-        showgrid=True,
-        gridcolor=CHART_GRID,
-        zeroline=False,
-        color=CHART_TEXT
-    )
-
-    fig.update_yaxes(
-        showgrid=False,
-        zeroline=False,
-        color=CHART_TEXT
-    )
-
+    fig.update_xaxes(showgrid=True, gridcolor=CHART_GRID, zeroline=False, color=CHART_TEXT)
+    fig.update_yaxes(showgrid=False, zeroline=False, color=CHART_TEXT)
     return fig
 
 
@@ -226,6 +163,8 @@ def apply_chart_style(fig, height):
 def load_data():
     candidate_files = [
         "bread_basket_per_transaksi.xlsx",
+        "bread_basket_per_transaksi.csv",
+        "bread_basket_per_transaksi.xlsx - Sheet1.csv"
     ]
 
     selected_file = None
@@ -236,17 +175,13 @@ def load_data():
             break
 
     if selected_file is None:
-        st.error(
-            "File dataset tidak ditemukan. Pastikan file dataset berada satu folder dengan app.py."
-        )
+        st.error("File dataset tidak ditemukan. Pastikan dataset ada satu folder dengan app.py.")
         st.stop()
 
     if selected_file.endswith(".xlsx"):
-        data = pd.read_excel(selected_file)
+        return pd.read_excel(selected_file)
     else:
-        data = pd.read_csv(selected_file)
-
-    return data
+        return pd.read_csv(selected_file)
 
 
 df = load_data()
@@ -256,94 +191,47 @@ df = load_data()
 # ==========================================================
 
 df_clean = df.copy()
-
 df_clean.columns = [str(col).strip().lower() for col in df_clean.columns]
-
 df_clean = df_clean.drop_duplicates()
 
-# Deteksi kolom transaksi
 if "transaction" in df_clean.columns:
     col_transaction = "transaction"
 else:
-    transaction_candidates = [
-        col for col in df_clean.columns
-        if "transaction" in col or "transaksi" in col or col == "id"
-    ]
+    col_transaction = [c for c in df_clean.columns if "transaction" in c or "transaksi" in c or c == "id"][0]
 
-    if len(transaction_candidates) == 0:
-        st.error("Kolom transaksi tidak ditemukan.")
-        st.stop()
-
-    col_transaction = transaction_candidates[0]
-
-# Deteksi kolom items
 if "items" in df_clean.columns:
     col_items = "items"
 elif "item" in df_clean.columns:
     col_items = "item"
 else:
-    item_candidates = [
-        col for col in df_clean.columns
-        if ("item" in col or "produk" in col)
-        and "jumlah" not in col
-        and "count" not in col
-    ]
-
-    if len(item_candidates) == 0:
-        st.error("Kolom item atau items tidak ditemukan.")
-        st.stop()
-
-    col_items = item_candidates[0]
+    col_items = [c for c in df_clean.columns if "item" in c or "produk" in c][0]
 
 df_clean = df_clean.dropna(subset=[col_transaction, col_items])
 
 df_clean["Transaction"] = df_clean[col_transaction].astype(str).str.strip()
 df_clean["Items"] = df_clean[col_items].astype(str).str.strip()
 
-# Kolom waktu jika tersedia
 if "period_day" in df_clean.columns:
     df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
 
 if "weekday_weekend" in df_clean.columns:
     df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
 
-# Hitung jumlah item
 df_clean["Jumlah_Item"] = df_clean["Items"].apply(
-    lambda x: len([
-        item.strip()
-        for item in str(x).split(",")
-        if item.strip() != ""
-    ])
+    lambda x: len([item.strip() for item in str(x).split(",") if item.strip() != ""])
 )
 
-# Membuat list transaksi
 transactions = df_clean["Items"].apply(
-    lambda x: [
-        item.strip()
-        for item in str(x).split(",")
-        if item.strip() != ""
-    ]
+    lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
 ).tolist()
-
-# Validasi transaksi
-transactions = [trx for trx in transactions if len(trx) > 0]
-
-if len(transactions) == 0:
-    st.error("Tidak ada transaksi yang valid untuk dianalisis.")
-    st.stop()
-
-# ==========================================================
-# ONE-HOT ENCODING
-# ==========================================================
-
-te = TransactionEncoder()
-te_array = te.fit(transactions).transform(transactions)
-
-basket_sets = pd.DataFrame(te_array, columns=te.columns_).astype(bool)
 
 # ==========================================================
 # APRIORI
 # ==========================================================
+
+te = TransactionEncoder()
+te_array = te.fit(transactions).transform(transactions)
+basket_sets = pd.DataFrame(te_array, columns=te.columns_).astype(bool)
 
 frequent_itemsets = apriori(
     basket_sets,
@@ -351,20 +239,8 @@ frequent_itemsets = apriori(
     use_colnames=True
 )
 
-if frequent_itemsets.empty:
-    st.error("Frequent itemsets tidak ditemukan. Coba turunkan nilai minimum support.")
-    st.stop()
-
 frequent_itemsets["length"] = frequent_itemsets["itemsets"].apply(lambda x: len(x))
-
-frequent_itemsets = frequent_itemsets.sort_values(
-    by="support",
-    ascending=False
-)
-
-# ==========================================================
-# ASSOCIATION RULES
-# ==========================================================
+frequent_itemsets = frequent_itemsets.sort_values(by="support", ascending=False)
 
 rules = association_rules(
     frequent_itemsets,
@@ -378,62 +254,28 @@ rules = rules[
 ].copy()
 
 if len(rules) > 0:
-    rules["antecedents_str"] = rules["antecedents"].apply(
-        lambda x: ", ".join(list(x))
-    )
-
-    rules["consequents_str"] = rules["consequents"].apply(
-        lambda x: ", ".join(list(x))
-    )
-
-    rules["rule"] = (
-        rules["antecedents_str"] +
-        " → " +
-        rules["consequents_str"]
-    )
-
-    rules = rules.sort_values(
-        by=["lift", "confidence"],
-        ascending=False
-    )
+    rules["antecedents_str"] = rules["antecedents"].apply(lambda x: ", ".join(list(x)))
+    rules["consequents_str"] = rules["consequents"].apply(lambda x: ", ".join(list(x)))
+    rules["rule"] = rules["antecedents_str"] + " → " + rules["consequents_str"]
+    rules = rules.sort_values(by=["lift", "confidence"], ascending=False)
 
 # ==========================================================
 # DATA VISUALISASI
 # ==========================================================
 
-all_items = [item for transaksi in transactions for item in transaksi]
+all_items = [item for trx in transactions for item in trx]
 item_counts = pd.Series(all_items).value_counts()
 
 top_items_df = item_counts.head(10).reset_index()
 top_items_df.columns = ["Produk", "Jumlah Pembelian"]
 
 top_pairs = frequent_itemsets[frequent_itemsets["length"] == 2].copy()
-
-if not top_pairs.empty:
-    top_pairs["Kombinasi Produk"] = top_pairs["itemsets"].apply(
-        lambda x: " + ".join(list(x))
-    )
-
-    top_pairs = top_pairs.sort_values(
-        by="support",
-        ascending=False
-    ).head(10)
-
-    top_pairs_display = top_pairs[["Kombinasi Produk", "support"]].copy()
-    top_pairs_display["Support (%)"] = top_pairs_display["support"] * 100
-else:
-    top_pairs_display = pd.DataFrame(
-        columns=["Kombinasi Produk", "Support (%)"]
-    )
-
-frequent_display = frequent_itemsets.head(10).copy()
-frequent_display["Itemsets"] = frequent_display["itemsets"].apply(
-    lambda x: ", ".join(list(x))
-)
-frequent_display["Support (%)"] = frequent_display["support"] * 100
+top_pairs["Kombinasi Produk"] = top_pairs["itemsets"].apply(lambda x: " + ".join(list(x)))
+top_pairs = top_pairs.sort_values(by="support", ascending=False).head(10)
+top_pairs["Support (%)"] = top_pairs["support"] * 100
 
 # ==========================================================
-# VIEW DASHBOARD
+# DASHBOARD
 # ==========================================================
 
 st.title("Dashboard Market Basket Analysis")
@@ -442,7 +284,8 @@ st.markdown(
     """
     <div class="hero-card">
         <h2>Strategi Bundling Produk Bakery</h2>
-        Menampilkan pola pembelian pelanggan untuk menentukan produk promosi bersama.
+        Dashboard ini membantu melihat produk yang paling sering dibeli, kombinasi produk yang cocok dijadikan bundling,
+        dan waktu transaksi paling ramai.
     </div>
     """,
     unsafe_allow_html=True
@@ -460,262 +303,152 @@ col3.metric("Frequent Itemsets", len(frequent_itemsets))
 col4.metric("Association Rules", len(rules))
 
 # ==========================================================
-# TEMUAN UTAMA
+# PRODUK PALING BANYAK DIBELI
 # ==========================================================
 
-st.subheader("Temuan Utama")
+st.header("Top 10 Produk Paling Banyak Dibeli")
+
+st.markdown(
+    """
+    <div class="caption-box">
+    Grafik ini menunjukkan produk yang paling sering dibeli pelanggan. 
+    Produk dengan pembelian tertinggi dapat dijadikan produk utama dalam strategi promosi.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+fig_top_items = px.bar(
+    top_items_df.sort_values("Jumlah Pembelian", ascending=True),
+    x="Jumlah Pembelian",
+    y="Produk",
+    orientation="h",
+    text="Jumlah Pembelian",
+    title="Top 10 Produk Paling Banyak Dibeli",
+    color_discrete_sequence=["#3B82F6"]
+)
+
+fig_top_items.update_traces(textposition="outside", textfont_color=CHART_TEXT)
+fig_top_items = apply_chart_style(fig_top_items, 420)
+st.plotly_chart(fig_top_items, use_container_width=True)
+
+# ==========================================================
+# REKOMENDASI BUNDLING
+# ==========================================================
+
+st.header("Rekomendasi Kombinasi Produk untuk Bundling")
+
+st.markdown(
+    """
+    <div class="caption-box">
+    Rekomendasi ini berasal dari pola transaksi pelanggan. Produk yang memiliki hubungan kuat dapat dipromosikan bersama dalam satu paket.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 if len(rules) > 0:
-    best_rule = rules.iloc[0]
-
-    st.markdown(
-        f"""
-        <div class="finding-card">
-            <div class="finding-title">{best_rule['rule']}</div>
-            Support: <b>{best_rule['support']*100:.2f}%</b> |
-            Confidence: <b>{best_rule['confidence']*100:.2f}%</b> |
-            Lift Ratio: <b>{best_rule['lift']:.2f}x</b><br>
-            Sekitar <b>{best_rule['confidence']*100:.2f}%</b> pelanggan yang membeli
-            <b>{best_rule['antecedents_str']}</b> juga membeli
-            <b>{best_rule['consequents_str']}</b>.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    for _, row in rules.head(5).iterrows():
+        st.markdown(
+            f"""
+            <div class="recommend-card">
+                <b>{row['rule']}</b><br>
+                Dari pelanggan yang membeli <b>{row['antecedents_str']}</b>, 
+                sekitar <b>{row['confidence']*100:.2f}%</b> juga membeli <b>{row['consequents_str']}</b>.<br>
+                <b>Saran:</b> Buat paket promo <b>{row['antecedents_str']} + {row['consequents_str']}</b>.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 else:
-    st.warning("Belum ditemukan rule asosiasi yang memenuhi kriteria.")
+    st.info("Belum ada rekomendasi bundling yang memenuhi kriteria.")
 
 # ==========================================================
-# TABEL RULES DAN REKOMENDASI
+# DETAIL NILAI REKOMENDASI
 # ==========================================================
 
-left_col, right_col = st.columns([1.4, 1])
+st.header("Detail Nilai Rekomendasi")
 
-with left_col:
-    st.subheader("Top Association Rules")
+st.markdown(
+    """
+    <div class="caption-box">
+    Support menunjukkan seberapa sering kombinasi produk muncul. 
+    Confidence menunjukkan peluang pelanggan membeli produk kedua setelah membeli produk pertama. 
+    Lift Ratio menunjukkan kekuatan hubungan antarproduk.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-    st.markdown(
-        """
-        <div class="caption-box">
-        Rule A → B berarti pelanggan yang membeli A cenderung membeli B.
-        Support dan confidence ditampilkan dalam persen.
-        </div>
-        """,
-        unsafe_allow_html=True
+if len(rules) > 0:
+    rules_table = rules[["rule", "support", "confidence", "lift"]].head(5).copy()
+    rules_table["Support (%)"] = rules_table["support"] * 100
+    rules_table["Confidence (%)"] = rules_table["confidence"] * 100
+    rules_table["Lift Ratio"] = rules_table["lift"]
+
+    rules_table = rules_table.rename(columns={"rule": "Rule"})
+    rules_table = rules_table[["Rule", "Support (%)", "Confidence (%)", "Lift Ratio"]]
+
+    rules_table["Support (%)"] = rules_table["Support (%)"].map(lambda x: f"{x:.2f}%")
+    rules_table["Confidence (%)"] = rules_table["Confidence (%)"].map(lambda x: f"{x:.2f}%")
+    rules_table["Lift Ratio"] = rules_table["Lift Ratio"].map(lambda x: f"{x:.2f}x")
+
+    st.dataframe(
+        rules_table.reset_index(drop=True),
+        use_container_width=True,
+        hide_index=True
     )
-
-    if len(rules) > 0:
-        tampil_rules = rules[["rule", "support", "confidence", "lift"]].head(8).copy()
-
-        tampil_rules["Support (%)"] = tampil_rules["support"] * 100
-        tampil_rules["Confidence (%)"] = tampil_rules["confidence"] * 100
-        tampil_rules["Lift Ratio"] = tampil_rules["lift"]
-
-        tampil_rules = tampil_rules.rename(columns={"rule": "Rule"})
-
-        tampil_rules = tampil_rules[
-            ["Rule", "Support (%)", "Confidence (%)", "Lift Ratio"]
-        ]
-
-        tampil_rules["Support (%)"] = tampil_rules["Support (%)"].map(lambda x: f"{x:.2f}%")
-        tampil_rules["Confidence (%)"] = tampil_rules["Confidence (%)"].map(lambda x: f"{x:.2f}%")
-        tampil_rules["Lift Ratio"] = tampil_rules["Lift Ratio"].map(lambda x: f"{x:.2f}x")
-
-        tampil_rules = tampil_rules.reset_index(drop=True)
-
-        st.dataframe(
-            tampil_rules,
-            use_container_width=True,
-            height=280,
-            hide_index=True
-        )
-    else:
-        st.info("Tidak ada association rules yang memenuhi kriteria.")
-
-with right_col:
-    st.subheader("Rekomendasi Bundling")
-
-    st.markdown(
-        """
-        <div class="caption-box">
-        Produk berikut dapat diprioritaskan sebagai paket promosi.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if len(rules) > 0:
-        for _, row in rules.head(3).iterrows():
-            st.markdown(
-                f"""
-                <div class="recommend-card">
-                    <b>{row['rule']}</b><br>
-                    Confidence: <b>{row['confidence']*100:.2f}%</b> |
-                    Lift Ratio: <b>{row['lift']:.2f}x</b><br>
-                    <b>Saran:</b> jadikan paket promo atau promosi silang.
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-    else:
-        st.info("Belum ada rekomendasi bundling.")
 
 # ==========================================================
-# VISUALISASI 1 DAN 2
+# KOMBINASI PRODUK
 # ==========================================================
 
-st.subheader("Visualisasi Pola Pembelian")
+st.header("Kombinasi Produk yang Sering Dibeli Bersama")
 
-col_chart1, col_chart2 = st.columns(2)
+st.markdown(
+    """
+    <div class="caption-box">
+    Grafik ini menunjukkan pasangan produk yang sering muncul dalam transaksi yang sama.
+    Kombinasi dengan nilai support tinggi dapat dipertimbangkan untuk strategi bundling.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-with col_chart1:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Produk paling sering dibeli. X = jumlah pembelian, Y = nama produk.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    fig_top_items = px.bar(
-        top_items_df.sort_values("Jumlah Pembelian", ascending=True),
-        x="Jumlah Pembelian",
-        y="Produk",
-        orientation="h",
-        text="Jumlah Pembelian",
-        title="Top 10 Produk Paling Sering Dibeli",
-        color_discrete_sequence=["#3B82F6"]
-    )
-
-    fig_top_items.update_traces(
-        textposition="outside",
-        textfont_color=CHART_TEXT
-    )
-
-    fig_top_items = apply_chart_style(fig_top_items, 340)
-
-    st.plotly_chart(fig_top_items, use_container_width=True)
-
-with col_chart2:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Kombinasi produk yang sering muncul bersama. X = support (%), Y = kombinasi produk.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if not top_pairs_display.empty:
-        fig_pairs = px.bar(
-            top_pairs_display.sort_values("Support (%)", ascending=True),
-            x="Support (%)",
-            y="Kombinasi Produk",
-            orientation="h",
-            text="Support (%)",
-            title="Top Kombinasi Produk Berdasarkan Support",
-            color_discrete_sequence=["#10B981"]
-        )
-
-        fig_pairs.update_traces(
-            texttemplate="%{text:.2f}%",
-            textposition="outside",
-            textfont_color=CHART_TEXT
-        )
-
-        fig_pairs = apply_chart_style(fig_pairs, 340)
-
-        st.plotly_chart(fig_pairs, use_container_width=True)
-    else:
-        st.info("Kombinasi produk belum ditemukan.")
-
-# ==========================================================
-# VISUALISASI 3 DAN 4
-# ==========================================================
-
-col_chart3, col_chart4 = st.columns(2)
-
-with col_chart3:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Frequent itemsets dengan support tertinggi. X = support (%), Y = itemset.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    fig_freq = px.bar(
-        frequent_display.sort_values("Support (%)", ascending=True),
+if not top_pairs.empty:
+    fig_pairs = px.bar(
+        top_pairs.sort_values("Support (%)", ascending=True),
         x="Support (%)",
-        y="Itemsets",
+        y="Kombinasi Produk",
         orientation="h",
         text="Support (%)",
-        title="Top Frequent Itemsets",
-        color_discrete_sequence=["#A855F7"]
+        title="Kombinasi Produk yang Sering Dibeli Bersama",
+        color_discrete_sequence=["#10B981"]
     )
 
-    fig_freq.update_traces(
+    fig_pairs.update_traces(
         texttemplate="%{text:.2f}%",
         textposition="outside",
         textfont_color=CHART_TEXT
     )
 
-    fig_freq = apply_chart_style(fig_freq, 340)
-
-    st.plotly_chart(fig_freq, use_container_width=True)
-
-with col_chart4:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Perbandingan confidence dan lift ratio. X = confidence (%), Y = lift ratio.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if len(rules) > 0:
-        scatter_rules = rules.head(10).copy()
-        scatter_rules["Confidence (%)"] = scatter_rules["confidence"] * 100
-        scatter_rules["Support (%)"] = scatter_rules["support"] * 100
-
-        fig_scatter = px.scatter(
-            scatter_rules,
-            x="Confidence (%)",
-            y="lift",
-            size="Support (%)",
-            hover_name="rule",
-            text="rule",
-            title="Confidence vs Lift Ratio",
-            color_discrete_sequence=["#EF4444"]
-        )
-
-        fig_scatter.update_traces(
-            textposition="top center",
-            textfont_color=CHART_TEXT,
-            marker=dict(opacity=0.85, line=dict(width=1, color=CHART_TEXT))
-        )
-
-        fig_scatter = apply_chart_style(fig_scatter, 340)
-
-        st.plotly_chart(fig_scatter, use_container_width=True)
-    else:
-        st.info("Data rule belum tersedia untuk scatter plot.")
+    fig_pairs = apply_chart_style(fig_pairs, 420)
+    st.plotly_chart(fig_pairs, use_container_width=True)
 
 # ==========================================================
-# VISUALISASI WAKTU
+# WAKTU TRANSAKSI
 # ==========================================================
 
-col_chart5, col_chart6 = st.columns(2)
+st.header("Waktu Transaksi Paling Ramai")
 
-with col_chart5:
+col_time1, col_time2 = st.columns(2)
+
+with col_time1:
     if "period_day" in df_clean.columns:
         st.markdown(
             """
             <div class="caption-box">
-            Distribusi transaksi berdasarkan periode hari. X = periode hari, Y = jumlah transaksi.
+            Menunjukkan periode hari dengan jumlah transaksi terbanyak.
             </div>
             """,
             unsafe_allow_html=True
@@ -733,21 +466,16 @@ with col_chart5:
             color_discrete_sequence=["#64748B"]
         )
 
-        fig_period.update_traces(
-            textposition="outside",
-            textfont_color=CHART_TEXT
-        )
-
-        fig_period = apply_chart_style(fig_period, 300)
-
+        fig_period.update_traces(textposition="outside", textfont_color=CHART_TEXT)
+        fig_period = apply_chart_style(fig_period, 330)
         st.plotly_chart(fig_period, use_container_width=True)
 
-with col_chart6:
+with col_time2:
     if "weekday_weekend" in df_clean.columns:
         st.markdown(
             """
             <div class="caption-box">
-            Distribusi transaksi weekday dan weekend. X = kategori hari, Y = jumlah transaksi.
+            Menunjukkan perbandingan transaksi pada hari kerja dan akhir pekan.
             </div>
             """,
             unsafe_allow_html=True
@@ -765,70 +493,9 @@ with col_chart6:
             color_discrete_sequence=["#F59E0B"]
         )
 
-        fig_weekday.update_traces(
-            textposition="outside",
-            textfont_color=CHART_TEXT
-        )
-
-        fig_weekday = apply_chart_style(fig_weekday, 300)
-
+        fig_weekday.update_traces(textposition="outside", textfont_color=CHART_TEXT)
+        fig_weekday = apply_chart_style(fig_weekday, 330)
         st.plotly_chart(fig_weekday, use_container_width=True)
-
-# ==========================================================
-# TABEL TAMBAHAN
-# ==========================================================
-
-st.subheader("Ringkasan Tabel Analisis")
-
-col_table1, col_table2 = st.columns(2)
-
-with col_table1:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Top frequent itemsets berdasarkan support.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    frequent_table = frequent_display.copy()
-    frequent_table = frequent_table[["Itemsets", "Support (%)", "length"]]
-    frequent_table = frequent_table.rename(columns={"length": "Jumlah Item"})
-    frequent_table["Support (%)"] = frequent_table["Support (%)"].map(lambda x: f"{x:.2f}%")
-    frequent_table = frequent_table.reset_index(drop=True)
-
-    st.dataframe(
-        frequent_table,
-        use_container_width=True,
-        height=280,
-        hide_index=True
-    )
-
-with col_table2:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Kombinasi produk terbaik untuk kandidat bundling.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    if not top_pairs_display.empty:
-        pair_table = top_pairs_display.copy()
-        pair_table = pair_table[["Kombinasi Produk", "Support (%)"]]
-        pair_table["Support (%)"] = pair_table["Support (%)"].map(lambda x: f"{x:.2f}%")
-        pair_table = pair_table.reset_index(drop=True)
-
-        st.dataframe(
-            pair_table,
-            use_container_width=True,
-            height=280,
-            hide_index=True
-        )
-    else:
-        st.info("Belum ada kombinasi produk yang memenuhi nilai support.")
 
 # ==========================================================
 # KESIMPULAN
@@ -837,8 +504,8 @@ with col_table2:
 st.markdown(
     """
     <div class="footer-card">
-    <b>Kesimpulan:</b> Kombinasi produk dengan nilai Lift Ratio > 1 menunjukkan hubungan asosiasi positif.
-    Hasil ini dapat digunakan sebagai dasar program promosi, strategi bundling, atau penataan produk.
+    <b>Kesimpulan:</b> Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
+    Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
     </div>
     """,
     unsafe_allow_html=True
