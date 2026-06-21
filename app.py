@@ -388,8 +388,46 @@ with left:
     )
 
     fig_top = apply_chart_style(fig_top, 315)
-    st.plotly_chart(fig_top, use_container_width=True, config={"displayModeBar": False})
-    st.markdown('</div>', unsafe_allow_html=True)
+    top5_share = top_items_df.head(5).copy()
+    total_top5 = top5_share["Jumlah Pembelian"].sum()
+    top5_share["Persentase"] = top5_share["Jumlah Pembelian"] / total_top5 * 100
+
+    fig_share = px.pie(
+        top5_share,
+        names="Produk",
+        values="Jumlah Pembelian",
+        hole=0.55,
+        title="Komposisi Top 5 Produk Terlaris",
+        color_discrete_sequence=["#3B82F6", "#22C55E", "#A855F7", "#F59E0B", "#EF4444"]
+    )
+
+    fig_share.update_traces(
+        textposition="inside",
+        textinfo="percent+label",
+        textfont_color="#F8FAFC",
+        hovertemplate="<b>%{label}</b><br>Jumlah: %{value}<br>Persentase: %{percent}<extra></extra>"
+    )
+
+    fig_share.update_layout(
+        template="plotly_dark",
+        height=230,
+        plot_bgcolor=CHART_BG,
+        paper_bgcolor=CHART_BG,
+        font=dict(color=CHART_TEXT, size=11),
+        title_font=dict(color=CHART_TEXT, size=15),
+        margin=dict(l=5, r=5, t=35, b=5),
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            y=-0.08,
+            x=0.5,
+            xanchor="center",
+            font=dict(size=10)
+        )
+    )
+
+    st.plotly_chart(fig_share, use_container_width=True, config={"displayModeBar": False})
+    # st.markdown('</div>', unsafe_allow_html=True)
 
 with right:
     st.markdown('<div class="section-card">', unsafe_allow_html=True)
@@ -549,9 +587,18 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown(
     """
     <div class="footer-card">
-    <b>⭐ Kesimpulan:</b>
-    Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
-    Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
+        <b>⭐ Kesimpulan:</b><br>
+        Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
+        Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
+        <br><br>
+        <div style="
+            text-align:right;
+            font-size:13px;
+            color:#94A3B8;
+            font-style:italic;
+        ">
+            By: Kelompok 12 IS-07-03
+        </div>
     </div>
     """,
     unsafe_allow_html=True
