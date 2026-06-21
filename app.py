@@ -177,7 +177,7 @@ st.markdown(
 # CHART STYLE
 # ==========================================================
 
-base_theme = st.get_option("theme.base") or "light"
+base_theme = st.get_option("theme.base")
 
 if base_theme == "dark":
     CHART_TEMPLATE = "plotly_dark"
@@ -226,8 +226,6 @@ def apply_chart_style(fig, height):
 def load_data():
     candidate_files = [
         "bread_basket_per_transaksi.xlsx",
-        "bread_basket_per_transaksi.csv",
-        "bread_basket_per_transaksi.xlsx - Sheet1.csv"
     ]
 
     selected_file = None
