@@ -172,20 +172,24 @@ def apply_chart_style(fig, height):
         plot_bgcolor=CHART_BG,
         paper_bgcolor=CHART_BG,
         font=dict(color=CHART_TEXT, size=12),
-        title_font=dict(color=CHART_TEXT, size=18),
-        margin=dict(l=10, r=20, t=45, b=10)
+        title=None,
+        title_text="",
+        margin=dict(l=10, r=20, t=10, b=10)
     )
+
     fig.update_xaxes(
         showgrid=True,
         gridcolor=CHART_GRID,
         zeroline=False,
         color=CHART_TEXT
     )
+
     fig.update_yaxes(
         showgrid=False,
         zeroline=False,
         color=CHART_TEXT
     )
+
     return fig
 
 # ==========================================================
@@ -400,7 +404,6 @@ with left:
         names="Produk",
         values="Jumlah Pembelian",
         hole=0.55,
-        title="Komposisi Top 5 Produk Terlaris",
         color_discrete_sequence=["#3B82F6", "#22C55E", "#A855F7", "#F59E0B", "#EF4444"]
     )
 
