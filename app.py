@@ -404,6 +404,7 @@ with left:
         names="Produk",
         values="Jumlah Pembelian",
         hole=0.55,
+        title="Komposisi Top 5 Produk Terlaris",
         color_discrete_sequence=["#3B82F6", "#22C55E", "#A855F7", "#F59E0B", "#EF4444"]
     )
 
