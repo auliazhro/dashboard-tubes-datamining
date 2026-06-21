@@ -228,122 +228,57 @@ def apply_chart_style(fig, height):
     return fig
 
 # ==========================================================
-# LOAD DATA & AUTOMATIC COLUMN CHECK
+# LOAD DATA & DATA CLEANING
 # ==========================================================
 
 @st.cache_data
-def load_data():
-    # Memuat file excel pastikan namanya sama di folder
-    data = pd.read_excel("bread_basket_per_transaksi.xlsx")
-    
-    # Standardisasi nama kolom agar huruf kecil semua untuk menghindari KeyError
+def load_and_clean_data():
+    # MEMPERBAIKI PEMBACAAN FILE MENJADI READ_CSV KARENA ASLINYA ADALAH CSV
+    try:
+        data = pd.read_csv("bread_basket_per_transaksi.xlsx - Sheet1.csv")
+    except FileNotFoundError:
+        data = pd.read_csv("bread_basket_per_transaksi.csv")
+        
     data.columns = [str(col).strip().lower() for col in data.columns]
-    return data
+    
+    df_clean = data.copy().drop_duplicates()
+    
+    # Deteksi nama kolom id transaksi dan kolom item produk
+    col_transaction = [c for c in df_clean.columns if "transaction" in c][0]
+    col_item = [c for c in df_clean.columns if "item" in c][0]
+    
+    df_clean = df_clean.dropna(subset=[col_transaction, col_item])
+    df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
+    
+    # Standardisasi rujukan nama variabel
+    df_clean["Transaction"] = df_clean[col_transaction] 
+    df_clean["Items"] = df_clean[col_item]
+    
+    if "period_day" in df_clean.columns:
+        df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
+    if "weekday_weekend" in df_clean.columns:
+        df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
+        
+    return df_clean
 
-df = load_data()
+df_clean = load_and_clean_data()
 
-# # ==========================================================
-# # LOAD DATA (INTERAKTIF DENGAN FILE UPLOADER)
-# # ==========================================================
-
-# st.sidebar.subheader("Pengaturan Dataset")
-# uploaded_file = st.sidebar.file_uploader(
-#     "Unggah File Excel Transaksi", 
-#     type=["xlsx"]
-# )
-
-# def load_data(file_source):
-#     data = pd.read_excel(file_source)
-#     data.columns = [str(col).strip().lower() for col in data.columns]
-#     return data
-
-# # Validasi jika file belum diunggah di Streamlit Cloud
-# if uploaded_file is not None:
-#     df = load_data(uploaded_file)
-# else:
-#     # Jika belum ada file yang diunggah, coba baca file bawaan di GitHub
-#     try:
-#         df = load_data("bread_basket_per_transaksi.xlsx")
-#     except:
-#         st.info("Silakan unggah file Excel 'bread_basket_per_transaksi.xlsx' pada bilah samping (sidebar) untuk memuat dashboard.")
-#         st.stop()
-
-# # ==========================================================
-# # DATA CLEANING WITH FLEXIBLE COLUMNS
-# # ==========================================================
-
-# df_clean = df.copy()
-# df_clean = df_clean.drop_duplicates()
-
-# # Deteksi otomatis kolom transaksi dan item (mengatasi variasi nama Transaction/Item/Items)
-# col_transaction = [c for c in df_clean.columns if "transaction" in c][0]
-# col_item = [c for c in df_clean.columns if "item" in c][0]
-
-# # Membersihkan baris yang kosong pada kolom utama
-# df_clean = df_clean.dropna(subset=[col_transaction, col_item])
-# df_clean[col_item] = df_clean[col_item].astype(str).str.strip()
-
-# # Mengganti rujukan statis "Transaction" menggunakan variabel dinamis
-# df_clean["Transaction"] = df_clean[col_transaction] 
-# df_clean["Items"] = df_clean[col_item]
-
-# if "period_day" in df_clean.columns:
-#     df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
-
-# if "weekday_weekend" in df_clean.columns:
-#     df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
-
-# df_clean["Jumlah_Item"] = df_clean["Items"].apply(
-#     lambda x: len([item.strip() for item in str(x).split(",") if item.strip() != ""])
-# )
-
-# transactions = df_clean["Items"].apply(
-#     lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
-# ).tolist()
-
-# ==========================================================
-# DATA CLEANING (DEFINITIF & TETAP)
-# ==========================================================
-
-df_clean = df.copy()
-df_clean = df_clean.drop_duplicates()
-
-# Kembalikan ke nama kolom asli bawaan Excel kamu (Gaya Google Colab)
-# Pastikan huruf besar 'T' pada Transaction dan 'I' pada Items sesuai dengan berkas asli
-df_clean = df_clean.dropna(subset=["Transaction", "Items"])
-
-df_clean["Items"] = df_clean["Items"].astype(str).str.strip()
-
-if "period_day" in df_clean.columns:
-    df_clean["period_day"] = df_clean["period_day"].astype(str).str.strip().str.lower()
-
-if "weekday_weekend" in df_clean.columns:
-    df_clean["weekday_weekend"] = df_clean["weekday_weekend"].astype(str).str.strip().str.lower()
-
-df_clean["Jumlah_Item"] = df_clean["Items"].apply(
-    lambda x: len([item.strip() for item in str(x).split(",") if item.strip() != ""])
-)
-
+# Membuat list transaksi belanja untuk pemodelan
 transactions = df_clean["Items"].apply(
     lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
 ).tolist()
 
-# # ==========================================================
-# # ONE-HOT ENCODING
-# # ==========================================================
-
-# te = TransactionEncoder()
-# te_array = te.fit(transactions).transform(transactions)
-# basket_sets = pd.DataFrame(te_array, columns=te.columns_)
+# ==========================================================
+# ONE-HOT ENCODING
+# ==========================================================
 
 te = TransactionEncoder()
 te_array = te.fit(transactions).transform(transactions)
-
-# Tambahkan .astype(bool) di ujung baris ini agar kompatibel dengan server Cloud
+# Ditambahkan .astype(bool) agar kompatibel sempurna dengan mlxtend versi terbaru di Cloud
 basket_sets = pd.DataFrame(te_array, columns=te.columns_).astype(bool)
 
 # ==========================================================
-# APRIORI
+# APRIORI (Diturunkan ke 0.02 agar menangkap aturan Toast -> Coffee)
 # ==========================================================
 
 frequent_itemsets = apriori(
@@ -353,11 +288,7 @@ frequent_itemsets = apriori(
 )
 
 frequent_itemsets["length"] = frequent_itemsets["itemsets"].apply(lambda x: len(x))
-
-frequent_itemsets = frequent_itemsets.sort_values(
-    by="support",
-    ascending=False
-)
+frequent_itemsets = frequent_itemsets.sort_values(by="support", ascending=False)
 
 # ==========================================================
 # ASSOCIATION RULES
@@ -378,14 +309,10 @@ if len(rules) > 0:
     rules["antecedents_str"] = rules["antecedents"].apply(lambda x: ", ".join(list(x)))
     rules["consequents_str"] = rules["consequents"].apply(lambda x: ", ".join(list(x)))
     rules["rule"] = rules["antecedents_str"] + " → " + rules["consequents_str"]
-
-    rules = rules.sort_values(
-        by=["lift", "confidence"],
-        ascending=False
-    )
+    rules = rules.sort_values(by=["lift", "confidence"], ascending=False)
 
 # ==========================================================
-# DATA VISUALISASI
+# DATA VISUALISASI PREPARATION
 # ==========================================================
 
 all_items = [item for transaksi in transactions for item in transaksi]
@@ -409,7 +336,7 @@ frequent_display = frequent_display[["Itemsets", "Support (%)", "length"]]
 frequent_display = frequent_display.rename(columns={"length": "Jumlah Item"})
 
 # ==========================================================
-# HEADER
+# JENDELA UTAMA DASHBOARD
 # ==========================================================
 
 st.title("Dashboard Market Basket Analysis")
@@ -425,7 +352,7 @@ st.markdown(
 )
 
 # ==========================================================
-# RINGKASAN
+# RINGKASAN METRIK
 # ==========================================================
 
 col1, col2, col3, col4 = st.columns(4)
@@ -443,7 +370,6 @@ st.subheader("Temuan Utama")
 
 if len(rules) > 0:
     best_rule = rules.iloc[0]
-
     st.markdown(
         f"""
         <div class="finding-card">
@@ -468,7 +394,6 @@ left_col, right_col = st.columns([1.4, 1])
 
 with left_col:
     st.subheader("Top Association Rules")
-
     st.markdown(
         """
         <div class="caption-box">
@@ -481,11 +406,9 @@ with left_col:
 
     if len(rules) > 0:
         tampil_rules = rules[["rule", "support", "confidence", "lift"]].head(8).copy()
-
         tampil_rules["Support (%)"] = tampil_rules["support"] * 100
         tampil_rules["Confidence (%)"] = tampil_rules["confidence"] * 100
         tampil_rules["Lift Ratio"] = tampil_rules["lift"]
-
         tampil_rules = tampil_rules.rename(columns={"rule": "Rule"})
         tampil_rules = tampil_rules[["Rule", "Support (%)", "Confidence (%)", "Lift Ratio"]]
 
@@ -493,19 +416,12 @@ with left_col:
         tampil_rules_format["Support (%)"] = tampil_rules_format["Support (%)"].map(lambda x: f"{x:.2f}%")
         tampil_rules_format["Confidence (%)"] = tampil_rules_format["Confidence (%)"].map(lambda x: f"{x:.2f}%")
         tampil_rules_format["Lift Ratio"] = tampil_rules_format["Lift Ratio"].map(lambda x: f"{x:.2f}x")
-
         tampil_rules_format = tampil_rules_format.reset_index(drop=True)
 
-        st.dataframe(
-            tampil_rules_format,
-            use_container_width=True,
-            height=300,
-            hide_index=True
-        )
+        st.dataframe(tampil_rules_format, use_container_width=True, height=300, hide_index=True)
 
 with right_col:
     st.subheader("Rekomendasi Bundling")
-
     st.markdown(
         """
         <div class="caption-box">
@@ -530,315 +446,92 @@ with right_col:
             )
 
 # ==========================================================
-# VISUALISASI 1 DAN 2
+# VISUALISASI BAR CHARTS & SCATTER PLOT
 # ==========================================================
 
 st.subheader("Visualisasi Pola Pembelian")
-
 col_chart1, col_chart2 = st.columns(2)
 
 with col_chart1:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Produk paling sering dibeli. X = jumlah pembelian, Y = nama produk.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    st.markdown('<div class="caption-box">Top 10 Produk Paling Sering Dibeli</div>', unsafe_allow_html=True)
     fig_top_items = px.bar(
         top_items_df.sort_values("Jumlah Pembelian", ascending=True),
-        x="Jumlah Pembelian",
-        y="Produk",
-        orientation="h",
-        text="Jumlah Pembelian",
-        title="Top 10 Produk Paling Sering Dibeli",
+        x="Jumlah Pembelian", y="Produk", orientation="h", text="Jumlah Pembelian",
         color_discrete_sequence=["#3B82F6"]
     )
-
     fig_top_items.update_traces(textposition="outside")
-
-    fig_top_items.update_layout(
-        height=420,
-        margin=dict(l=5, r=15, t=45, b=5),
-        xaxis_title="Jumlah Pembelian",
-        yaxis_title="Produk",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(size=12, color="#111827")
-    )
-
     fig_top_items = apply_chart_style(fig_top_items, 420)
-
     st.plotly_chart(fig_top_items, use_container_width=True)
 
 with col_chart2:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Kombinasi produk yang sering muncul bersama. X = support (%), Y = kombinasi produk.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    st.markdown('<div class="caption-box">Top Kombinasi Produk Berdasarkan Support</div>', unsafe_allow_html=True)
     fig_pairs = px.bar(
         top_pairs_display.sort_values("Support (%)", ascending=True),
-        x="Support (%)",
-        y="Kombinasi Produk",
-        orientation="h",
-        text="Support (%)",
-        title="Top Kombinasi Produk Berdasarkan Support",
+        x="Support (%)", y="Kombinasi Produk", orientation="h", text="Support (%)",
         color_discrete_sequence=["#10B981"]
     )
-
-    fig_pairs.update_traces(
-        texttemplate="%{text:.2f}%",
-        textposition="outside"
-    )
-
-    fig_pairs.update_layout(
-        height=420,
-        margin=dict(l=5, r=15, t=45, b=5),
-        xaxis_title="Support (%)",
-        yaxis_title="Kombinasi Produk",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(size=12, color="#111827")
-    )
-
+    fig_pairs.update_traces(texttemplate="%{text:.2f}%", textposition="outside")
     fig_pairs = apply_chart_style(fig_pairs, 420)
-
     st.plotly_chart(fig_pairs, use_container_width=True)
-
-# ==========================================================
-# VISUALISASI 3 DAN 4
-# ==========================================================
 
 col_chart3, col_chart4 = st.columns(2)
 
 with col_chart3:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Frequent itemsets dengan support tertinggi. X = support (%), Y = itemset.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    st.markdown('<div class="caption-box">Top Frequent Itemsets</div>', unsafe_allow_html=True)
     fig_freq = px.bar(
         frequent_display.sort_values("Support (%)", ascending=True),
-        x="Support (%)",
-        y="Itemsets",
-        orientation="h",
-        text="Support (%)",
-        title="Top Frequent Itemsets",
+        x="Support (%)", y="Itemsets", orientation="h", text="Support (%)",
         color_discrete_sequence=["#A855F7"]
     )
-
-    fig_freq.update_traces(
-        texttemplate="%{text:.2f}%",
-        textposition="outside"
-    )
-
-    fig_freq.update_layout(
-        height=420,
-        margin=dict(l=5, r=15, t=45, b=5),
-        xaxis_title="Support (%)",
-        yaxis_title="Itemsets",
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(size=12, color="#111827")
-    )
-
+    fig_freq.update_traces(texttemplate="%{text:.2f}%", textposition="outside")
     fig_freq = apply_chart_style(fig_freq, 420)
-
     st.plotly_chart(fig_freq, use_container_width=True)
 
 with col_chart4:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Perbandingan confidence dan lift ratio. X = confidence (%), Y = lift ratio.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+    st.markdown('<div class="caption-box">Perbandingan Confidence dan Lift Ratio</div>', unsafe_allow_html=True)
     if len(rules) > 0:
         scatter_rules = rules.head(10).copy()
         scatter_rules["Confidence (%)"] = scatter_rules["confidence"] * 100
         scatter_rules["Support (%)"] = scatter_rules["support"] * 100
 
         fig_scatter = px.scatter(
-            scatter_rules,
-            x="Confidence (%)",
-            y="lift",
-            size="Support (%)",
-            hover_name="rule",
-            text="rule",
-            title="Confidence vs Lift Ratio",
-            color_discrete_sequence=["#EF4444"]
+            scatter_rules, x="Confidence (%)", y="lift", size="Support (%)",
+            hover_name="rule", text="rule", color_discrete_sequence=["#EF4444"]
         )
-
-        fig_scatter.update_traces(
-            textposition="top center",
-            textfont_color=CHART_TEXT,
-            marker=dict(opacity=0.85, line=dict(width=1, color=CHART_TEXT))
-        )
-
-        fig_scatter.update_layout(
-            height=420,
-            margin=dict(l=5, r=15, t=45, b=5),
-            xaxis_title="Confidence (%)",
-            yaxis_title="Lift Ratio",
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            font=dict(size=11, color="#111827")
-        )
-
+        fig_scatter.update_traces(textposition="top center", textfont_color=CHART_TEXT)
         fig_scatter = apply_chart_style(fig_scatter, 420)
-
         st.plotly_chart(fig_scatter, use_container_width=True)
 
 # ==========================================================
-# VISUALISASI 5 DAN 6
+# VISUALISASI PERIODE WAKTU TRANSAKSI
 # ==========================================================
 
 col_chart5, col_chart6 = st.columns(2)
 
 with col_chart5:
     if "period_day" in df_clean.columns:
-        st.markdown(
-            """
-            <div class="caption-box">
-            Distribusi transaksi berdasarkan periode hari. X = periode hari, Y = jumlah transaksi.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
+        st.markdown('<div class="caption-box">Transaksi Berdasarkan Periode Hari</div>', unsafe_allow_html=True)
         period_counts = df_clean["period_day"].value_counts().reset_index()
         period_counts.columns = ["Periode Hari", "Jumlah Transaksi"]
 
-        fig_period = px.bar(
-            period_counts,
-            x="Periode Hari",
-            y="Jumlah Transaksi",
-            text="Jumlah Transaksi",
-            title="Transaksi Berdasarkan Periode Hari",
-            color_discrete_sequence=["#64748B"]
-        )
-
+        fig_period = px.bar(period_counts, x="Periode Hari", y="Jumlah Transaksi", text="Jumlah Transaksi", color_discrete_sequence=["#64748B"])
         fig_period.update_traces(textposition="outside")
-
-        fig_period.update_layout(
-            height=360,
-            margin=dict(l=5, r=15, t=45, b=5),
-            xaxis_title="Periode Hari",
-            yaxis_title="Jumlah Transaksi",
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            font=dict(size=12, color="#111827")
-        )
-
         fig_period = apply_chart_style(fig_period, 360)
-
         st.plotly_chart(fig_period, use_container_width=True)
 
 with col_chart6:
     if "weekday_weekend" in df_clean.columns:
-        st.markdown(
-            """
-            <div class="caption-box">
-            Distribusi transaksi weekday dan weekend. X = kategori hari, Y = jumlah transaksi.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
+        st.markdown('<div class="caption-box">Transaksi Weekday vs Weekend</div>', unsafe_allow_html=True)
         weekday_counts = df_clean["weekday_weekend"].value_counts().reset_index()
         weekday_counts.columns = ["Kategori Hari", "Jumlah Transaksi"]
 
-        fig_weekday = px.bar(
-            weekday_counts,
-            x="Kategori Hari",
-            y="Jumlah Transaksi",
-            text="Jumlah Transaksi",
-            title="Transaksi Weekday vs Weekend",
-            color_discrete_sequence=["#F59E0B"]
-        )
-
+        fig_weekday = px.bar(weekday_counts, x="Kategori Hari", y="Jumlah Transaksi", text="Jumlah Transaksi", color_discrete_sequence=["#F59E0B"])
         fig_weekday.update_traces(textposition="outside")
-
-        fig_weekday.update_layout(
-            height=360,
-            margin=dict(l=5, r=15, t=45, b=5),
-            xaxis_title="Kategori Hari",
-            yaxis_title="Jumlah Transaksi",
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-            font=dict(size=12, color="#111827")
-        )
-
         fig_weekday = apply_chart_style(fig_weekday, 360)
-
         st.plotly_chart(fig_weekday, use_container_width=True)
 
 # ==========================================================
-# TABEL TAMBAHAN
-# ==========================================================
-
-st.subheader("Ringkasan Tabel Analisis")
-
-col_table1, col_table2 = st.columns(2)
-
-with col_table1:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Top frequent itemsets berdasarkan support.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    frequent_table = frequent_display.copy()
-    frequent_table["Support (%)"] = frequent_table["Support (%)"].map(lambda x: f"{x:.2f}%")
-    frequent_table = frequent_table.reset_index(drop=True)
-
-    st.dataframe(
-        frequent_table,
-        use_container_width=True,
-        height=280,
-        hide_index=True
-    )
-
-with col_table2:
-    st.markdown(
-        """
-        <div class="caption-box">
-        Kombinasi produk terbaik untuk kandidat bundling.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    pair_table = top_pairs_display.copy()
-    pair_table["Support (%)"] = pair_table["Support (%)"].map(lambda x: f"{x:.2f}%")
-    pair_table = pair_table.reset_index(drop=True)
-
-    st.dataframe(
-        pair_table,
-        use_container_width=True,
-        height=280,
-        hide_index=True
-    )
-
-# ==========================================================
-# KESIMPULAN
+# KESIMPULAN FOOTER
 # ==========================================================
 
 st.markdown(
@@ -850,4 +543,3 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
