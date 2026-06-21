@@ -227,46 +227,46 @@ def apply_chart_style(fig, height):
 
     return fig
 
-# # ==========================================================
-# # LOAD DATA & AUTOMATIC COLUMN CHECK
-# # ==========================================================
+# ==========================================================
+# LOAD DATA & AUTOMATIC COLUMN CHECK
+# ==========================================================
 
-# @st.cache_data
-# def load_data():
-#     # Memuat file excel pastikan namanya sama di folder
-#     data = pd.read_excel("bread_basket_per_transaksi.xlsx")
+@st.cache_data
+def load_data():
+    # Memuat file excel pastikan namanya sama di folder
+    data = pd.read_excel("bread_basket_per_transaksi.xlsx")
     
-#     # Standardisasi nama kolom agar huruf kecil semua untuk menghindari KeyError
-#     data.columns = [str(col).strip().lower() for col in data.columns]
-#     return data
-
-# df = load_data()
-
-# ==========================================================
-# LOAD DATA (INTERAKTIF DENGAN FILE UPLOADER)
-# ==========================================================
-
-st.sidebar.subheader("Pengaturan Dataset")
-uploaded_file = st.sidebar.file_uploader(
-    "Unggah File Excel Transaksi", 
-    type=["xlsx"]
-)
-
-def load_data(file_source):
-    data = pd.read_excel(file_source)
+    # Standardisasi nama kolom agar huruf kecil semua untuk menghindari KeyError
     data.columns = [str(col).strip().lower() for col in data.columns]
     return data
 
-# Validasi jika file belum diunggah di Streamlit Cloud
-if uploaded_file is not None:
-    df = load_data(uploaded_file)
-else:
-    # Jika belum ada file yang diunggah, coba baca file bawaan di GitHub
-    try:
-        df = load_data("bread_basket_per_transaksi.xlsx")
-    except:
-        st.info("Silakan unggah file Excel 'bread_basket_per_transaksi.xlsx' pada bilah samping (sidebar) untuk memuat dashboard.")
-        st.stop()
+df = load_data()
+
+# # ==========================================================
+# # LOAD DATA (INTERAKTIF DENGAN FILE UPLOADER)
+# # ==========================================================
+
+# st.sidebar.subheader("Pengaturan Dataset")
+# uploaded_file = st.sidebar.file_uploader(
+#     "Unggah File Excel Transaksi", 
+#     type=["xlsx"]
+# )
+
+# def load_data(file_source):
+#     data = pd.read_excel(file_source)
+#     data.columns = [str(col).strip().lower() for col in data.columns]
+#     return data
+
+# # Validasi jika file belum diunggah di Streamlit Cloud
+# if uploaded_file is not None:
+#     df = load_data(uploaded_file)
+# else:
+#     # Jika belum ada file yang diunggah, coba baca file bawaan di GitHub
+#     try:
+#         df = load_data("bread_basket_per_transaksi.xlsx")
+#     except:
+#         st.info("Silakan unggah file Excel 'bread_basket_per_transaksi.xlsx' pada bilah samping (sidebar) untuk memuat dashboard.")
+#         st.stop()
 
 # ==========================================================
 # DATA CLEANING WITH FLEXIBLE COLUMNS
@@ -301,13 +301,19 @@ transactions = df_clean["Items"].apply(
     lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
 ).tolist()
 
-# ==========================================================
-# ONE-HOT ENCODING
-# ==========================================================
+# # ==========================================================
+# # ONE-HOT ENCODING
+# # ==========================================================
+
+# te = TransactionEncoder()
+# te_array = te.fit(transactions).transform(transactions)
+# basket_sets = pd.DataFrame(te_array, columns=te.columns_)
 
 te = TransactionEncoder()
 te_array = te.fit(transactions).transform(transactions)
-basket_sets = pd.DataFrame(te_array, columns=te.columns_)
+
+# Tambahkan .astype(bool) di ujung baris ini agar kompatibel dengan server Cloud
+basket_sets = pd.DataFrame(te_array, columns=te.columns_).astype(bool)
 
 # ==========================================================
 # APRIORI
