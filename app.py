@@ -270,12 +270,16 @@ def load_and_clean_data():
     return df_clean
 
 # ==========================================================
-# ONE-HOT ENCODING
+# ONE-HOT ENCODING (PERBAIKAN NAMEERROR TRANSACTIONS)
 # ==========================================================
+
+# PASTIKAN BARIS INI ADA UNTUK MENDEFINISIKAN VARIABEL 'transactions'
+transactions = df_clean["Items"].apply(
+    lambda x: [item.strip() for item in str(x).split(",") if item.strip() != ""]
+).tolist()
 
 te = TransactionEncoder()
 te_array = te.fit(transactions).transform(transactions)
-# Ditambahkan .astype(bool) agar kompatibel sempurna dengan mlxtend versi terbaru di Cloud
 basket_sets = pd.DataFrame(te_array, columns=te.columns_).astype(bool)
 
 # ==========================================================
