@@ -5,10 +5,6 @@ from pathlib import Path
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
 
-# ==========================================================
-# PAGE CONFIG
-# ==========================================================
-
 st.set_page_config(
     page_title="Dashboard Market Basket Analysis",
     page_icon="📊",
@@ -16,144 +12,172 @@ st.set_page_config(
 )
 
 # ==========================================================
-# STYLE
+# CSS DASHBOARD DARK MODERN
 # ==========================================================
 
-st.markdown(
-    """
-    <style>
-    .block-container {
-        padding-top: 1.2rem;
-        padding-bottom: 1rem;
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
+st.markdown("""
+<style>
+.stApp {
+    background: radial-gradient(circle at top left, #0F2742 0%, #07111F 40%, #050B14 100%);
+    color: #F8FAFC;
+}
 
-    h1 {
-        font-size: 34px !important;
-        font-weight: 800 !important;
-        margin-bottom: 0.2rem !important;
-    }
+.block-container {
+    padding-top: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 1250px;
+}
 
-    h2, h3 {
-        font-weight: 700 !important;
-        margin-top: 0.8rem !important;
-        margin-bottom: 0.4rem !important;
-    }
+h1 {
+    font-size: 34px !important;
+    font-weight: 800 !important;
+    color: #FFFFFF !important;
+    margin-bottom: 0.2rem !important;
+}
 
-    .hero-card {
-        background: linear-gradient(90deg, #1E3A8A 0%, #2563EB 100%);
-        color: white;
-        padding: 18px 22px;
-        border-radius: 12px;
-        margin-bottom: 14px;
-        box-shadow: 0px 2px 8px rgba(0,0,0,0.12);
-    }
+h2, h3 {
+    color: #F8FAFC !important;
+    font-weight: 800 !important;
+}
 
-    .hero-card h2 {
-        color: white !important;
-        margin: 0 !important;
-        font-size: 22px !important;
-    }
+.sub-title {
+    color: #60A5FA;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
 
-    .caption-box {
-        padding: 10px 12px;
-        border-radius: 8px;
-        border-left: 4px solid #3B82F6;
-        margin-bottom: 10px;
-        font-size: 14px;
-        box-shadow: 0px 1px 5px rgba(0,0,0,0.08);
-    }
+.hero-card {
+    background: rgba(15, 45, 75, 0.85);
+    border: 1px solid rgba(96, 165, 250, 0.25);
+    color: #DCEBFF;
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
 
-    .recommend-card {
-        padding: 14px 16px;
-        border-radius: 10px;
-        border-left: 5px solid #10B981;
-        margin-bottom: 10px;
-        font-size: 14px;
-        box-shadow: 0px 1px 5px rgba(0,0,0,0.08);
-    }
+.section-card {
+    background: rgba(15, 23, 42, 0.78);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.22);
+}
 
-    .footer-card {
-        background-color: #1E3A8A;
-        color: white;
-        padding: 16px 18px;
-        border-radius: 12px;
-        margin-top: 12px;
-        font-size: 14px;
-    }
+.caption-box {
+    background: rgba(14, 48, 82, 0.72);
+    color: #BFDBFE;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border-left: 4px solid #3B82F6;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
 
-    div[data-testid="stMetric"] {
-        padding: 13px;
-        border-radius: 10px;
-        border: 1px solid rgba(148,163,184,0.45);
-        box-shadow: 0px 1px 5px rgba(0,0,0,0.08);
-    }
+.metric-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 10px;
+    padding: 18px 18px;
+    min-height: 95px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.22);
+}
 
-    [data-testid="stMetricValue"] {
-        color: #3B82F6;
-        font-size: 26px;
-        font-weight: 800;
-    }
+.metric-title {
+    font-size: 14px;
+    color: #E5E7EB;
+}
 
-    @media (prefers-color-scheme: light) {
-        .caption-box, .recommend-card {
-            background-color: #F8FAFC;
-            color: #1F2937;
-        }
+.metric-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #FFFFFF;
+}
 
-        div[data-testid="stMetric"] {
-            background-color: #F8FAFC;
-        }
-    }
+.metric-sub {
+    font-size: 13px;
+    color: #CBD5E1;
+}
 
-    @media (prefers-color-scheme: dark) {
-        .caption-box, .recommend-card {
-            background-color: #111827;
-            color: #F9FAFB;
-        }
+.recommend-card {
+    background: rgba(15, 23, 42, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 8px;
+    padding: 13px 14px;
+    margin-bottom: 8px;
+}
 
-        div[data-testid="stMetric"] {
-            background-color: #111827;
-        }
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+.rule-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #FFFFFF;
+}
+
+.rule-text {
+    font-size: 13px;
+    color: #D1D5DB;
+}
+
+.badge {
+    float: right;
+    border: 1px solid #22C55E;
+    color: #86EFAC;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.footer-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: #F8FAFC;
+    padding: 16px;
+    border-radius: 10px;
+    margin-top: 12px;
+    margin-bottom: 20px;
+}
+
+[data-testid="stDataFrame"] {
+    background-color: rgba(15, 23, 42, 0.85);
+    border-radius: 8px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ==========================================================
 # CHART STYLE
 # ==========================================================
 
-base_theme = st.get_option("theme.base") or "light"
-
-if base_theme == "dark":
-    CHART_TEMPLATE = "plotly_dark"
-    CHART_BG = "#111827"
-    CHART_TEXT = "#F9FAFB"
-    CHART_GRID = "#374151"
-else:
-    CHART_TEMPLATE = "plotly_white"
-    CHART_BG = "#FFFFFF"
-    CHART_TEXT = "#111827"
-    CHART_GRID = "#E5E7EB"
-
+CHART_BG = "#07111F"
+CHART_TEXT = "#F8FAFC"
+CHART_GRID = "rgba(148,163,184,0.18)"
 
 def apply_chart_style(fig, height):
     fig.update_layout(
-        template=CHART_TEMPLATE,
+        template="plotly_dark",
         height=height,
         plot_bgcolor=CHART_BG,
         paper_bgcolor=CHART_BG,
-        font=dict(size=12, color=CHART_TEXT),
-        title_font=dict(size=17, color=CHART_TEXT),
-        margin=dict(l=5, r=20, t=45, b=5)
+        font=dict(color=CHART_TEXT, size=12),
+        title_font=dict(color=CHART_TEXT, size=18),
+        margin=dict(l=10, r=20, t=45, b=10)
     )
-    fig.update_xaxes(showgrid=True, gridcolor=CHART_GRID, zeroline=False, color=CHART_TEXT)
-    fig.update_yaxes(showgrid=False, zeroline=False, color=CHART_TEXT)
+    fig.update_xaxes(
+        showgrid=True,
+        gridcolor=CHART_GRID,
+        zeroline=False,
+        color=CHART_TEXT
+    )
+    fig.update_yaxes(
+        showgrid=False,
+        zeroline=False,
+        color=CHART_TEXT
+    )
     return fig
-
 
 # ==========================================================
 # LOAD DATA
@@ -161,28 +185,25 @@ def apply_chart_style(fig, height):
 
 @st.cache_data
 def load_data():
-    candidate_files = [
+    files = [
         "bread_basket_per_transaksi.xlsx",
         "bread_basket_per_transaksi.csv",
         "bread_basket_per_transaksi.xlsx - Sheet1.csv"
     ]
 
-    selected_file = None
-
-    for file in candidate_files:
+    selected = None
+    for file in files:
         if Path(file).exists():
-            selected_file = file
+            selected = file
             break
 
-    if selected_file is None:
-        st.error("File dataset tidak ditemukan. Pastikan dataset ada satu folder dengan app.py.")
+    if selected is None:
+        st.error("Dataset tidak ditemukan. Pastikan file dataset ada satu folder dengan app.py.")
         st.stop()
 
-    if selected_file.endswith(".xlsx"):
-        return pd.read_excel(selected_file)
-    else:
-        return pd.read_csv(selected_file)
-
+    if selected.endswith(".xlsx"):
+        return pd.read_excel(selected)
+    return pd.read_csv(selected)
 
 df = load_data()
 
@@ -191,23 +212,13 @@ df = load_data()
 # ==========================================================
 
 df_clean = df.copy()
-df_clean.columns = [str(col).strip().lower() for col in df_clean.columns]
+df_clean.columns = [str(c).strip().lower() for c in df_clean.columns]
 df_clean = df_clean.drop_duplicates()
 
-if "transaction" in df_clean.columns:
-    col_transaction = "transaction"
-else:
-    col_transaction = [c for c in df_clean.columns if "transaction" in c or "transaksi" in c or c == "id"][0]
-
-if "items" in df_clean.columns:
-    col_items = "items"
-elif "item" in df_clean.columns:
-    col_items = "item"
-else:
-    col_items = [c for c in df_clean.columns if "item" in c or "produk" in c][0]
+col_transaction = "transaction" if "transaction" in df_clean.columns else [c for c in df_clean.columns if "transaction" in c or "transaksi" in c or c == "id"][0]
+col_items = "items" if "items" in df_clean.columns else "item" if "item" in df_clean.columns else [c for c in df_clean.columns if "item" in c or "produk" in c][0]
 
 df_clean = df_clean.dropna(subset=[col_transaction, col_items])
-
 df_clean["Transaction"] = df_clean[col_transaction].astype(str).str.strip()
 df_clean["Items"] = df_clean[col_items].astype(str).str.strip()
 
@@ -275,182 +286,209 @@ top_pairs = top_pairs.sort_values(by="support", ascending=False).head(10)
 top_pairs["Support (%)"] = top_pairs["support"] * 100
 
 # ==========================================================
-# DASHBOARD
+# HEADER
 # ==========================================================
 
-st.title("Dashboard Market Basket Analysis")
+st.markdown("# 📊 Dashboard Market Basket Analysis")
+st.markdown('<div class="sub-title">Strategi Bundling Produk Bakery</div>', unsafe_allow_html=True)
 
 st.markdown(
     """
     <div class="hero-card">
-        <h2>Strategi Bundling Produk Bakery</h2>
-        Dashboard ini membantu melihat produk yang paling sering dibeli, kombinasi produk yang cocok dijadikan bundling,
-        dan waktu transaksi paling ramai.
+    Dashboard ini membantu melihat produk yang paling sering dibeli, kombinasi produk yang cocok dijadikan bundling,
+    dan waktu transaksi paling ramai untuk mendukung pengambilan keputusan strategi promosi.
     </div>
     """,
     unsafe_allow_html=True
 )
 
 # ==========================================================
-# RINGKASAN
+# METRIC CARD
 # ==========================================================
 
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-col1.metric("Jumlah Transaksi", df_clean["Transaction"].nunique())
-col2.metric("Jumlah Item Unik", basket_sets.shape[1])
-col3.metric("Frequent Itemsets", len(frequent_itemsets))
-col4.metric("Association Rules", len(rules))
-
-# ==========================================================
-# PRODUK PALING BANYAK DIBELI
-# ==========================================================
-
-st.header("Top 10 Produk Paling Banyak Dibeli")
-
-st.markdown(
-    """
-    <div class="caption-box">
-    Grafik ini menunjukkan produk yang paling sering dibeli pelanggan. 
-    Produk dengan pembelian tertinggi dapat dijadikan produk utama dalam strategi promosi.
+with c1:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">🛒 Jumlah Transaksi</div>
+        <div class="metric-value">{df_clean["Transaction"].nunique():,}</div>
+        <div class="metric-sub">transaksi unik</div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True)
 
-fig_top_items = px.bar(
-    top_items_df.sort_values("Jumlah Pembelian", ascending=True),
-    x="Jumlah Pembelian",
-    y="Produk",
-    orientation="h",
-    text="Jumlah Pembelian",
-    title="Top 10 Produk Paling Banyak Dibeli",
-    color_discrete_sequence=["#3B82F6"]
-)
-
-fig_top_items.update_traces(textposition="outside", textfont_color=CHART_TEXT)
-fig_top_items = apply_chart_style(fig_top_items, 420)
-st.plotly_chart(fig_top_items, use_container_width=True)
-
-# ==========================================================
-# REKOMENDASI BUNDLING
-# ==========================================================
-
-st.header("Rekomendasi Kombinasi Produk untuk Bundling")
-
-st.markdown(
-    """
-    <div class="caption-box">
-    Rekomendasi ini berasal dari pola transaksi pelanggan. Produk yang memiliki hubungan kuat dapat dipromosikan bersama dalam satu paket.
+with c2:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">📦 Jumlah Item Unik</div>
+        <div class="metric-value">{basket_sets.shape[1]}</div>
+        <div class="metric-sub">item unik</div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True)
 
-if len(rules) > 0:
-    for _, row in rules.head(5).iterrows():
-        st.markdown(
-            f"""
-            <div class="recommend-card">
-                <b>{row['rule']}</b><br>
-                Dari pelanggan yang membeli <b>{row['antecedents_str']}</b>, 
-                sekitar <b>{row['confidence']*100:.2f}%</b> juga membeli <b>{row['consequents_str']}</b>.<br>
-                <b>Saran:</b> Buat paket promo <b>{row['antecedents_str']} + {row['consequents_str']}</b>.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-else:
-    st.info("Belum ada rekomendasi bundling yang memenuhi kriteria.")
-
-# ==========================================================
-# DETAIL NILAI REKOMENDASI
-# ==========================================================
-
-st.header("Detail Nilai Rekomendasi")
-
-st.markdown(
-    """
-    <div class="caption-box">
-    Support menunjukkan seberapa sering kombinasi produk muncul. 
-    Confidence menunjukkan peluang pelanggan membeli produk kedua setelah membeli produk pertama. 
-    Lift Ratio menunjukkan kekuatan hubungan antarproduk.
+with c3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">🧩 Frequent Itemsets</div>
+        <div class="metric-value">{len(frequent_itemsets)}</div>
+        <div class="metric-sub">itemset</div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+    """, unsafe_allow_html=True)
 
-if len(rules) > 0:
-    rules_table = rules[["rule", "support", "confidence", "lift"]].head(5).copy()
-    rules_table["Support (%)"] = rules_table["support"] * 100
-    rules_table["Confidence (%)"] = rules_table["confidence"] * 100
-    rules_table["Lift Ratio"] = rules_table["lift"]
+with c4:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">🔗 Association Rules</div>
+        <div class="metric-value">{len(rules)}</div>
+        <div class="metric-sub">rule</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    rules_table = rules_table.rename(columns={"rule": "Rule"})
-    rules_table = rules_table[["Rule", "Support (%)", "Confidence (%)", "Lift Ratio"]]
+st.write("")
 
-    rules_table["Support (%)"] = rules_table["Support (%)"].map(lambda x: f"{x:.2f}%")
-    rules_table["Confidence (%)"] = rules_table["Confidence (%)"].map(lambda x: f"{x:.2f}%")
-    rules_table["Lift Ratio"] = rules_table["Lift Ratio"].map(lambda x: f"{x:.2f}x")
+# ==========================================================
+# SECTION 1 & 2
+# ==========================================================
 
-    st.dataframe(
-        rules_table.reset_index(drop=True),
-        use_container_width=True,
-        hide_index=True
+left, right = st.columns([1, 1.12])
+
+with left:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.subheader("1. Top 10 Produk Paling Banyak Dibeli")
+    st.markdown(
+        '<div class="caption-box">Grafik ini menunjukkan produk yang paling sering dibeli pelanggan. Produk dengan pembelian tertinggi dapat dijadikan produk utama dalam strategi promosi.</div>',
+        unsafe_allow_html=True
     )
+
+    fig_top = px.bar(
+        top_items_df.sort_values("Jumlah Pembelian", ascending=True),
+        x="Jumlah Pembelian",
+        y="Produk",
+        orientation="h",
+        text="Jumlah Pembelian",
+        color_discrete_sequence=["#3B82F6"]
+    )
+
+    fig_top.update_traces(
+        textposition="outside",
+        textfont_color="#F8FAFC",
+        cliponaxis=False
+    )
+
+    fig_top.update_layout(
+        xaxis_title="Jumlah Pembelian",
+        yaxis_title="",
+    )
+
+    fig_top = apply_chart_style(fig_top, 360)
+    st.plotly_chart(fig_top, use_container_width=True, config={"displayModeBar": False})
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with right:
+    st.markdown('<div class="section-card">', unsafe_allow_html=True)
+    st.subheader("2. Rekomendasi Kombinasi Produk untuk Bundling")
+    st.markdown(
+        '<div class="caption-box">Rekomendasi ini berasal dari pola transaksi pelanggan. Semakin tinggi persentase, semakin besar peluang produk kedua dibeli setelah produk pertama.</div>',
+        unsafe_allow_html=True
+    )
+
+    if len(rules) > 0:
+        icons = ["☕", "🥐", "🥪", "🍰", "🍪"]
+        for idx, (_, row) in enumerate(rules.head(4).iterrows()):
+            st.markdown(
+                f"""
+                <div class="recommend-card">
+                    <span style="font-size:30px; margin-right:14px;">{icons[idx % len(icons)]}</span>
+                    <span class="badge">{row['confidence']*100:.2f}%</span>
+                    <span class="rule-title">{row['rule']}</span><br>
+                    <span class="rule-text">
+                    Dari pelanggan yang membeli {row['antecedents_str']}, {row['confidence']*100:.2f}% juga membeli {row['consequents_str']}.<br>
+                    <b>Saran:</b> Buat paket promo {row['antecedents_str']} + {row['consequents_str']}.
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+    else:
+        st.info("Belum ada rekomendasi bundling.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ==========================================================
+# DETAIL NILAI
+# ==========================================================
+
+st.markdown('<div class="section-card">', unsafe_allow_html=True)
+st.subheader("3. Detail Nilai Rekomendasi")
+st.markdown(
+    '<div class="caption-box">Support menunjukkan seberapa sering kombinasi produk muncul. Confidence menunjukkan peluang pelanggan membeli produk kedua setelah produk pertama. Lift Ratio menunjukkan kekuatan hubungan antarproduk. Nilai Lift > 1 berarti hubungan produk positif.</div>',
+    unsafe_allow_html=True
+)
+
+if len(rules) > 0:
+    table = rules[["rule", "support", "confidence", "lift"]].head(5).copy()
+    table["Support (%)"] = table["support"] * 100
+    table["Confidence (%)"] = table["confidence"] * 100
+    table["Lift Ratio"] = table["lift"]
+    table = table.rename(columns={"rule": "Rule"})
+    table = table[["Rule", "Support (%)", "Confidence (%)", "Lift Ratio"]]
+    table["Support (%)"] = table["Support (%)"].map(lambda x: f"{x:.2f}%")
+    table["Confidence (%)"] = table["Confidence (%)"].map(lambda x: f"{x:.2f}%")
+    table["Lift Ratio"] = table["Lift Ratio"].map(lambda x: f"{x:.2f}x")
+
+    st.dataframe(table.reset_index(drop=True), use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================================
 # KOMBINASI PRODUK
 # ==========================================================
 
-st.header("Kombinasi Produk yang Sering Dibeli Bersama")
-
+st.markdown('<div class="section-card">', unsafe_allow_html=True)
+st.subheader("4. Kombinasi Produk yang Sering Dibeli Bersama")
 st.markdown(
-    """
-    <div class="caption-box">
-    Grafik ini menunjukkan pasangan produk yang sering muncul dalam transaksi yang sama.
-    Kombinasi dengan nilai support tinggi dapat dipertimbangkan untuk strategi bundling.
-    </div>
-    """,
+    '<div class="caption-box">Grafik ini menunjukkan pasangan produk yang sering muncul dalam transaksi yang sama. Kombinasi dengan nilai support tinggi dapat dipertimbangkan untuk bundling.</div>',
     unsafe_allow_html=True
 )
 
-if not top_pairs.empty:
-    fig_pairs = px.bar(
-        top_pairs.sort_values("Support (%)", ascending=True),
-        x="Support (%)",
-        y="Kombinasi Produk",
-        orientation="h",
-        text="Support (%)",
-        title="Kombinasi Produk yang Sering Dibeli Bersama",
-        color_discrete_sequence=["#10B981"]
-    )
+fig_pair = px.bar(
+    top_pairs.sort_values("Support (%)", ascending=True),
+    x="Support (%)",
+    y="Kombinasi Produk",
+    orientation="h",
+    text="Support (%)",
+    color_discrete_sequence=["#4ADE80"]
+)
 
-    fig_pairs.update_traces(
-        texttemplate="%{text:.2f}%",
-        textposition="outside",
-        textfont_color=CHART_TEXT
-    )
+fig_pair.update_traces(
+    texttemplate="%{text:.2f}%",
+    textposition="outside",
+    textfont_color="#F8FAFC",
+    cliponaxis=False
+)
 
-    fig_pairs = apply_chart_style(fig_pairs, 420)
-    st.plotly_chart(fig_pairs, use_container_width=True)
+fig_pair.update_layout(
+    xaxis_title="Support (%)",
+    yaxis_title=""
+)
+
+fig_pair = apply_chart_style(fig_pair, 330)
+st.plotly_chart(fig_pair, use_container_width=True, config={"displayModeBar": False})
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================================
 # WAKTU TRANSAKSI
 # ==========================================================
 
-st.header("Waktu Transaksi Paling Ramai")
+st.markdown('<div class="section-card">', unsafe_allow_html=True)
+st.subheader("5. Waktu Transaksi Paling Ramai")
 
-col_time1, col_time2 = st.columns(2)
+t1, t2 = st.columns(2)
 
-with col_time1:
+with t1:
     if "period_day" in df_clean.columns:
         st.markdown(
-            """
-            <div class="caption-box">
-            Menunjukkan periode hari dengan jumlah transaksi terbanyak.
-            </div>
-            """,
+            '<div class="caption-box"><b>Berdasarkan Periode Hari</b><br>Menunjukkan periode hari dengan jumlah transaksi terbanyak.</div>',
             unsafe_allow_html=True
         )
 
@@ -462,22 +500,19 @@ with col_time1:
             x="Periode Hari",
             y="Jumlah Transaksi",
             text="Jumlah Transaksi",
-            title="Transaksi Berdasarkan Periode Hari",
-            color_discrete_sequence=["#64748B"]
+            color_discrete_sequence=["#60A5FA"]
         )
 
-        fig_period.update_traces(textposition="outside", textfont_color=CHART_TEXT)
-        fig_period = apply_chart_style(fig_period, 330)
-        st.plotly_chart(fig_period, use_container_width=True)
+        fig_period.update_traces(textposition="outside", textfont_color="#F8FAFC")
+        fig_period.update_layout(xaxis_title="Periode Hari", yaxis_title="Jumlah Transaksi")
+        fig_period = apply_chart_style(fig_period, 285)
 
-with col_time2:
+        st.plotly_chart(fig_period, use_container_width=True, config={"displayModeBar": False})
+
+with t2:
     if "weekday_weekend" in df_clean.columns:
         st.markdown(
-            """
-            <div class="caption-box">
-            Menunjukkan perbandingan transaksi pada hari kerja dan akhir pekan.
-            </div>
-            """,
+            '<div class="caption-box"><b>Weekday vs Weekend</b><br>Menunjukkan perbandingan transaksi pada hari kerja dan akhir pekan.</div>',
             unsafe_allow_html=True
         )
 
@@ -489,13 +524,16 @@ with col_time2:
             x="Kategori Hari",
             y="Jumlah Transaksi",
             text="Jumlah Transaksi",
-            title="Transaksi Weekday vs Weekend",
             color_discrete_sequence=["#F59E0B"]
         )
 
-        fig_weekday.update_traces(textposition="outside", textfont_color=CHART_TEXT)
-        fig_weekday = apply_chart_style(fig_weekday, 330)
-        st.plotly_chart(fig_weekday, use_container_width=True)
+        fig_weekday.update_traces(textposition="outside", textfont_color="#F8FAFC")
+        fig_weekday.update_layout(xaxis_title="Kategori Hari", yaxis_title="Jumlah Transaksi")
+        fig_weekday = apply_chart_style(fig_weekday, 285)
+
+        st.plotly_chart(fig_weekday, use_container_width=True, config={"displayModeBar": False})
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================================
 # KESIMPULAN
@@ -504,7 +542,8 @@ with col_time2:
 st.markdown(
     """
     <div class="footer-card">
-    <b>Kesimpulan:</b> Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
+    <b>⭐ Kesimpulan:</b><br>
+    Produk yang sering muncul bersama dapat digunakan sebagai dasar strategi promosi dan bundling.
     Produk dengan pembelian tinggi dapat dijadikan produk utama, kemudian dipasangkan dengan produk yang memiliki hubungan asosiasi kuat.
     </div>
     """,
