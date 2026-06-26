@@ -445,7 +445,7 @@ with right:
 
     if len(rules) > 0:
         icons = ["☕", "🥐", "🥪", "🍰", "🍪"]
-        for idx, (_, row) in enumerate(rules.head(4).iterrows()):
+        for idx, (_, row) in enumerate(rules.head(5).iterrows()):
             st.markdown(
                 f"""
                 <div class="recommend-card">
